@@ -138,7 +138,6 @@ public class TelaVeiculos implements Tela {
         cbDisponibilidade.setValue("Disponível");
         cbDisponibilidade.setMaxWidth(Double.MAX_VALUE);
 
-        // Chamada direta do método herdado da interface Tela
         rootModal.getChildren().addAll(
                 lblModalTitulo,
                 new Separator(),
