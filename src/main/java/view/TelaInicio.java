@@ -1,12 +1,15 @@
 package view;
 
 import javafx.geometry.Insets;
+import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.Separator;
 import javafx.scene.layout.VBox;
 
-public class TelaInicio {
-    public static VBox criar() {
+public class TelaInicio implements Tela{
+
+    @Override
+    public Node criar() {
         VBox painel = new VBox(15);
         VBox card = new VBox(15);
 
@@ -31,7 +34,7 @@ public class TelaInicio {
         lblTecnologiasLista.setStyle("-fx-text-fill: #475569; -fx-font-size: 13px;");
         boxTecnologias.getChildren().addAll(lblTecnologiasTitulo, lblTecnologiasLista);
 
-        //  Funcionalidade
+        //Funcionalidade
         VBox boxFuncionalidades = new VBox(5);
         Label lblFuncionalidadesTitulo = new Label("Funcionalidades do sistema:");
         lblFuncionalidadesTitulo.setStyle("-fx-font-weight: bold; -fx-text-fill: #1e293b; -fx-font-size: 14px;");
@@ -39,7 +42,7 @@ public class TelaInicio {
         lblFuncionalidadesLista.setStyle("-fx-text-fill: #475569; -fx-font-size: 13px;");
         boxFuncionalidades.getChildren().addAll(lblFuncionalidadesTitulo, lblFuncionalidadesLista);
 
-        // Status
+        //Status
         VBox boxStatus = new VBox(3);
         Label lblStatusTitulo = new Label("Status:");
         lblStatusTitulo.setStyle("-fx-font-weight: bold; -fx-text-fill: #1e293b; -fx-font-size: 14px;");
@@ -47,7 +50,6 @@ public class TelaInicio {
         lblStatusValor.setStyle("-fx-text-fill: #0284c7; -fx-font-size: 13px; -fx-font-weight: bold;");
         boxStatus.getChildren().addAll(lblStatusTitulo, lblStatusValor);
 
-        // Adiciona todos os elementos dentro do cartão
         card.getChildren().addAll(
                 lblNomeProjeto,
                 lblDescricao,

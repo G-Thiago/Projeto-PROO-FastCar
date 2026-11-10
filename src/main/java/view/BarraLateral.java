@@ -18,7 +18,7 @@ public class BarraLateral {
         sidebarBox.setStyle("-fx-background-color: #010019;");
         sidebarBox.setPadding(new Insets(20, 15, 20, 15));
 
-        // --- Logo no topo da barra lateral ---
+        // Topo
         VBox logoBox = new VBox(10);
         logoBox.setAlignment(Pos.CENTER);
         logoBox.setPadding(new Insets(0, 0, 10, 0));
@@ -53,11 +53,9 @@ public class BarraLateral {
 
         menuBox.getChildren().addAll(btnInicio, btnVeiculos, btnClientes, btnNovaLocacao, btnDevolucoes);
 
-        // Rodapé (Configurações)
+        // Rodapé
         VBox footerBox = new VBox();
         footerBox.setPadding(new Insets(10, 0, 0, 0));
-        Button btnConfiguracoes = criarBotaoMenu("⚙", "Configurações", listener);
-        footerBox.getChildren().add(btnConfiguracoes);
 
         sidebarBox.getChildren().addAll(logoBox, menuBox, footerBox);
         return sidebarBox;
