@@ -4,8 +4,7 @@ import javafx.scene.control.TextField;
 
 public class MaskUtils {
 
-    // Aplica máscara de CPF: 000.000.000-00
-
+    // 000.000.000-00
     public static void aplicarMascaraCpf(TextField textField) {
         textField.textProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue == null) return;
@@ -29,7 +28,7 @@ public class MaskUtils {
         });
     }
 
-    // Aplica máscara de Telefone: (00) 00000-0000
+    // (00) 00000-0000
     public static void aplicarMascaraTelefone(TextField textField) {
         textField.textProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue == null) return;
@@ -55,8 +54,7 @@ public class MaskUtils {
         });
     }
 
-    //  máscara de Placa: ABC-1D23
-
+    //ABC-1D23
     public static void aplicarMascaraPlaca(TextField textField) {
         textField.textProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue == null) return;
@@ -85,7 +83,7 @@ public class MaskUtils {
         });
     }
 
-
+// 0000
     public static void aplicarMascaraAno(TextField textField) {
         textField.textProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue == null) return;
@@ -97,6 +95,8 @@ public class MaskUtils {
             }
         });
     }
+
+    //DD/MM/AAAA
     public static void aplicarMascaraData(TextField textField) {
         textField.textProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue == null) {
@@ -120,7 +120,6 @@ public class MaskUtils {
 
             if (!formatted.toString().equals(textField.getText())) {
                 textField.setText(formatted.toString());
-                // Posiciona o cursor sempre no final do texto digitado
                 textField.positionCaret(formatted.length());
             }
         });
@@ -148,31 +147,24 @@ public class MaskUtils {
         textField.textProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue == null) return;
 
-            // Evita loop infinito caso o texto já esteja formatado exatamente igual
             String textoAtual = textField.getText();
 
-            // 1. Remove tudo o que não for número
             String digits = newValue.replaceAll("\\D", "");
 
-            // Se apagar tudo, reseta para R$ 0,00
             if (digits.isEmpty()) {
                 digits = "0";
             }
 
-            // Remove zeros à esquerda desnecessários (ex: "0015" vira "15")
-            // Mas mantém se for apenas "0"
             long valorCentavos = Long.parseLong(digits);
 
-            // 2. Formata dividindo por 100 para transformar centavos em reais (ex: 15000 vira 150,00)
             String valorFormatado = String.format("R$ %,.2f", valorCentavos / 100.0)
-                    .replace(".", "#") // Troca temporária para ajustar o padrão brasileiro
+                    .replace(".", "#")
                     .replace(",", ".")
                     .replace("#", ",");
 
-            // 3. Atualiza o campo apenas se houver diferença para evitar loop no listener
             if (!textoAtual.equals(valorFormatado)) {
                 textField.setText(valorFormatado);
-                textField.positionCaret(valorFormatado.length()); // Mantém o cursor sempre no final
+                textField.positionCaret(valorFormatado.length());
             }
 
 

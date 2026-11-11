@@ -12,6 +12,7 @@ import java.io.InputStream;
 public class BarraLateral {
 
     public static VBox criar(TelaPrincipal.MenuClickListener listener) {
+
         VBox sidebarBox = new VBox(15);
         sidebarBox.setPrefWidth(240);
         sidebarBox.setMaxWidth(240);
@@ -23,6 +24,7 @@ public class BarraLateral {
         logoBox.setAlignment(Pos.CENTER);
         logoBox.setPadding(new Insets(0, 0, 10, 0));
 
+        // Logo
         try {
             InputStream is = BarraLateral.class.getResourceAsStream("/Logo.jpg");
             if (is != null) {
