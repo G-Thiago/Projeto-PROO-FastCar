@@ -117,7 +117,7 @@ public class TelaClientes implements Tela {
 
         TextField txtCnh = new TextField();
         txtCnh.setPromptText("Ex: 12345678901");
-
+        MaskUtils.aplicarMascaraCNH(txtCnh);
         rootModal.getChildren().addAll(
                 lblModalTitulo,
                 new Separator(),

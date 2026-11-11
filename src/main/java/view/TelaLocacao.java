@@ -112,11 +112,11 @@ public class TelaLocacao implements Tela {
         txtDevolucao.setPromptText("DD/MM/AAAA");
         MaskUtils.aplicarMascaraData(txtDevolucao);
 
-        Label lblDiasCalculados = new Label("Dias: 7");
-        Label lblValorTotal = new Label("R$ 1.050,00");
+        Label lblDiasCalculados = new Label("Dias: X");
+        Label lblValorTotal = new Label("R$ 0,00");
         lblValorTotal.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #1e293b;");
 
-        Label lblDetalheTotal = new Label("(7 dias x R$ 150,00)");
+        Label lblDetalheTotal = new Label("(X dias x R$ 0,00)");
         lblDetalheTotal.setStyle("-fx-text-fill: #64748b; -fx-font-size: 11px;");
 
         VBox boxTotal = new VBox(2, new Label("Valor total da locação:"), lblValorTotal, lblDetalheTotal);

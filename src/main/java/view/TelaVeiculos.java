@@ -127,11 +127,12 @@ public class TelaVeiculos implements Tela {
         MaskUtils.aplicarMascaraAno(txtAno);
 
         TextField txtPlaca = new TextField();
-        txtPlaca.setPromptText("Ex: ABC-1023");
+        txtPlaca.setPromptText("Ex: ABC-1D23");
         MaskUtils.aplicarMascaraPlaca(txtPlaca);
 
         TextField txtValorDiaria = new TextField();
         txtValorDiaria.setPromptText("Ex: 150,00");
+        MaskUtils.aplicarMascaraPreco(txtValorDiaria);
 
         ComboBox<String> cbDisponibilidade = new ComboBox<>();
         cbDisponibilidade.getItems().addAll("Disponível", "Alugado", "Em manutenção");

@@ -3,5 +3,7 @@ module org.example {
     requires javafx.graphics;
     requires java.sql.rowset;
 
-    exports model;
+    exports app;
+    exports view;
+    exports controller;
 }
