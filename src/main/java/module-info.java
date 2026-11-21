@@ -2,6 +2,7 @@ module org.example {
     requires javafx.controls;
     requires javafx.graphics;
     requires java.sql.rowset;
+    requires java.sql;
 
     exports app;
     exports view;

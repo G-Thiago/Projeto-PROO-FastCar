@@ -10,6 +10,7 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.*;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import controller.VeiculoDAO;
 
 public class TelaVeiculos implements Tela {
 
@@ -30,7 +31,6 @@ public class TelaVeiculos implements Tela {
 
         Button btnNovoVeiculo = new Button("+ Novo Veículo");
         btnNovoVeiculo.setStyle("-fx-background-color: #2563eb; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand; -fx-padding: 8px 15px;");
-        btnNovoVeiculo.setOnAction(e -> abrirModalNovoVeiculo());
 
         cabecalho.getChildren().addAll(lblTitulo, espacador, btnNovoVeiculo);
         containerPrincipal.getChildren().add(cabecalho);
@@ -49,6 +49,7 @@ public class TelaVeiculos implements Tela {
         containerPrincipal.getChildren().add(barraBusca);
 
         TableView<ModelVeiculoTabela> tabela = new TableView<>();
+        btnNovoVeiculo.setOnAction(e -> abrirModalNovoVeiculo(tabela));
         tabela.setStyle("-fx-background-color: white; -fx-border-color: #e2e8f0;");
         tabela.setPlaceholder(new Label("Nenhum veículo cadastrado."));
         VBox.setVgrow(tabela, Priority.ALWAYS);
@@ -94,6 +95,7 @@ public class TelaVeiculos implements Tela {
         colAcoes.setPrefWidth(80);
 
         tabela.getColumns().addAll(colId, colFoto, colMarca, colModelo, colAno, colPlaca, colDiaria, colDisponibilidade, colAcoes);
+        tabela.getItems().setAll(new VeiculoDAO().listar());
 
         VBox painelTabela = new VBox(tabela);
         painelTabela.setStyle("-fx-background-color: white; -fx-border-color: #e2e8f0; -fx-border-radius: 6px; -fx-background-radius: 6px;");
@@ -102,7 +104,7 @@ public class TelaVeiculos implements Tela {
         return containerPrincipal;
     }
 
-    private void abrirModalNovoVeiculo() {
+    private void abrirModalNovoVeiculo(TableView<ModelVeiculoTabela> tabela) {
         Stage modalStage = new Stage();
         modalStage.initModality(Modality.APPLICATION_MODAL);
         modalStage.setTitle(" Novo Veículo");
@@ -153,10 +155,50 @@ public class TelaVeiculos implements Tela {
         Button btnSalvar = new Button("Salvar");
         btnSalvar.setStyle("-fx-background-color: #2563eb; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand;");
         btnSalvar.setOnAction(e -> {
-            Alert alerta = new Alert(Alert.AlertType.INFORMATION, "Interface visual acionada com sucesso! (Sem DAO)");
-            alerta.setHeaderText(null);
-            alerta.showAndWait();
-            modalStage.close();
+            try {
+                VeiculoDAO dao = new VeiculoDAO();
+
+                boolean salvou = dao.cadastrar(
+                        txtMarca.getText(),
+                        txtModelo.getText(),
+                        Integer.parseInt(txtAno.getText()),
+                        txtPlaca.getText(),
+                        Double.parseDouble(
+                                txtValorDiaria.getText().replaceAll("\\D", "")
+                        ) / 100.0,
+                        cbDisponibilidade.getValue()
+                );
+
+                if (salvou) {
+                    Alert alerta = new Alert(
+                            Alert.AlertType.INFORMATION,
+                            "Veículo cadastrado com sucesso!"
+                    );
+                    alerta.setHeaderText(null);
+                    alerta.showAndWait();
+
+                    // Atualiza a tabela de veículos, s/ precisar fechar e abrir a tela de novo
+                    tabela.getItems().setAll(new VeiculoDAO().listar());
+
+                    modalStage.close();
+
+                } else {
+                    Alert alerta = new Alert(
+                            Alert.AlertType.ERROR,
+                            "Erro ao cadastrar veículo. Confira o console."
+                    );
+                    alerta.setHeaderText(null);
+                    alerta.showAndWait();
+                }
+
+            } catch (NumberFormatException ex) {
+                Alert alerta = new Alert(
+                        Alert.AlertType.ERROR,
+                        "Confira o ano e o valor da diária."
+                );
+                alerta.setHeaderText(null);
+                alerta.showAndWait();
+            }
         });
 
         Button btnCancelar = new Button("Cancelar");
