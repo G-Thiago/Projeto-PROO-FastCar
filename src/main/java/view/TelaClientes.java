@@ -1,5 +1,7 @@
 package view;
 
+import controller.ClienteController;
+import dao.ClientesDAO;
 import controller.MaskUtils;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -30,27 +32,13 @@ public class TelaClientes implements Tela {
 
         Button btnNovoCliente = new Button("+ Novo Cliente");
         btnNovoCliente.setStyle("-fx-background-color: #2563eb; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand; -fx-padding: 8px 15px;");
-        btnNovoCliente.setOnAction(e -> abrirModalNovoCliente());
 
         cabecalho.getChildren().addAll(lblTitulo, espacador, btnNovoCliente);
         containerPrincipal.getChildren().add(cabecalho);
 
-        HBox barraBusca = new HBox(10);
-        barraBusca.setAlignment(Pos.CENTER_LEFT);
-        barraBusca.setPadding(new Insets(10));
-        barraBusca.setStyle("-fx-background-color: white; -fx-border-color: #e2e8f0; -fx-border-radius: 6px; -fx-background-radius: 6px;");
-
-        TextField txtBusca = new TextField();
-        txtBusca.setPromptText("🔍 Buscar por nome, CPF ou telefone...");
-        txtBusca.setPrefWidth(400);
-        txtBusca.setStyle("-fx-pref-height: 32px;");
-
-        barraBusca.getChildren().add(txtBusca);
-        containerPrincipal.getChildren().add(barraBusca);
-
         TableView<ModelClienteTabela> tabela = new TableView<>();
+        btnNovoCliente.setOnAction(e -> abrirModalNovoCliente(tabela));
         tabela.setStyle("-fx-background-color: white; -fx-border-color: #e2e8f0;");
-        tabela.setPlaceholder(new Label("Nenhum cliente cadastrado."));
         VBox.setVgrow(tabela, Priority.ALWAYS);
 
         Label lblVazio = new Label("Nenhum cliente cadastrado no momento.");
@@ -59,7 +47,7 @@ public class TelaClientes implements Tela {
 
         TableColumn<ModelClienteTabela, String> colId = new TableColumn<>("ID");
         colId.setCellValueFactory(new PropertyValueFactory<>("id"));
-        colId.setPrefWidth(50);
+        colId.setPrefWidth(60);
 
         TableColumn<ModelClienteTabela, String> colNome = new TableColumn<>("Nome");
         colNome.setCellValueFactory(new PropertyValueFactory<>("nome"));
@@ -77,11 +65,12 @@ public class TelaClientes implements Tela {
         colCnh.setCellValueFactory(new PropertyValueFactory<>("cnh"));
         colCnh.setPrefWidth(130);
 
-        TableColumn<ModelClienteTabela, String> colAcoes = new TableColumn<>("Ações");
+        TableColumn<ModelClienteTabela, HBox> colAcoes = new TableColumn<>("Ações");
         colAcoes.setCellValueFactory(new PropertyValueFactory<>("acoes"));
-        colAcoes.setPrefWidth(80);
+        colAcoes.setPrefWidth(160);
 
         tabela.getColumns().addAll(colId, colNome, colCpf, colTelefone, colCnh, colAcoes);
+        carregarTabela(tabela);
 
         VBox painelTabela = new VBox(tabela);
         painelTabela.setStyle("-fx-background-color: white; -fx-border-color: #e2e8f0; -fx-border-radius: 6px; -fx-background-radius: 6px;");
@@ -90,10 +79,18 @@ public class TelaClientes implements Tela {
         return containerPrincipal;
     }
 
-    private void abrirModalNovoCliente() {
+    private void carregarTabela(TableView<ModelClienteTabela> tabela) {
+        ClientesDAO dao = new ClientesDAO();
+        ClienteController controller = new ClienteController();
+        var lista = dao.listar();
+        lista.forEach(item -> item.configurarAcoes(controller, () -> carregarTabela(tabela)));
+        tabela.getItems().setAll(lista);
+    }
+
+    private void abrirModalNovoCliente(TableView<ModelClienteTabela> tabela) {
         Stage modalStage = new Stage();
         modalStage.initModality(Modality.APPLICATION_MODAL);
-        modalStage.setTitle(" Novo Cliente");
+        modalStage.setTitle("Novo Cliente");
         modalStage.setResizable(false);
 
         VBox rootModal = new VBox(15);
@@ -101,27 +98,28 @@ public class TelaClientes implements Tela {
         rootModal.setStyle("-fx-background-color: white;");
         rootModal.setAlignment(Pos.TOP_LEFT);
 
-        Label lblModalTitulo = new Label(" Adicionar Novo Cliente");
+        Label lblModalTitulo = new Label("Adicionar Novo Cliente");
         lblModalTitulo.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #1e293b;");
 
         TextField txtNome = new TextField();
-        txtNome.setPromptText("Ex: Ana Clara Souza");
+        txtNome.setPromptText("Ex: João Silva");
 
         TextField txtCpf = new TextField();
-        txtCpf.setPromptText("000.000.000-00");
+        txtCpf.setPromptText("Ex: 123.456.789-00");
         MaskUtils.aplicarMascaraCpf(txtCpf);
 
         TextField txtTelefone = new TextField();
-        txtTelefone.setPromptText("(00) 00000-0000");
+        txtTelefone.setPromptText("Ex: (11) 99999-9999");
         MaskUtils.aplicarMascaraTelefone(txtTelefone);
 
         TextField txtCnh = new TextField();
-        txtCnh.setPromptText("Ex: 12345678901");
+        txtCnh.setPromptText("Ex: 12345678900");
         MaskUtils.aplicarMascaraCNH(txtCnh);
+
         rootModal.getChildren().addAll(
                 lblModalTitulo,
                 new Separator(),
-                criarCampoForm("Nome Completo:", txtNome),
+                criarCampoForm("Nome:", txtNome),
                 criarCampoForm("CPF:", txtCpf),
                 criarCampoForm("Telefone:", txtTelefone),
                 criarCampoForm("CNH:", txtCnh)
@@ -130,10 +128,33 @@ public class TelaClientes implements Tela {
         Button btnSalvar = new Button("Salvar");
         btnSalvar.setStyle("-fx-background-color: #2563eb; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand;");
         btnSalvar.setOnAction(e -> {
-            Alert alerta = new Alert(Alert.AlertType.INFORMATION, "Interface visual acionada com sucesso! (Sem DAO)");
-            alerta.setHeaderText(null);
-            alerta.showAndWait();
-            modalStage.close();
+            if (txtNome.getText().isBlank() || txtCpf.getText().isBlank()) {
+                Alert aviso = new Alert(Alert.AlertType.WARNING, "Preencha ao menos o nome e o CPF do cliente.");
+                aviso.setHeaderText(null);
+                aviso.showAndWait();
+                return;
+            }
+
+            ClientesDAO dao = new ClientesDAO();
+            boolean salvou = dao.cadastrar(
+                    txtNome.getText().trim(),
+                    txtCpf.getText().trim(),
+                    txtTelefone.getText().trim(),
+                    txtCnh.getText().trim()
+            );
+
+            if (salvou) {
+                Alert alerta = new Alert(Alert.AlertType.INFORMATION, "Cliente cadastrado com sucesso!");
+                alerta.setHeaderText(null);
+                alerta.showAndWait();
+
+                carregarTabela(tabela);
+                modalStage.close();
+            } else {
+                Alert alerta = new Alert(Alert.AlertType.ERROR, "Erro ao cadastrar cliente. Confira o console.");
+                alerta.setHeaderText(null);
+                alerta.showAndWait();
+            }
         });
 
         Button btnCancelar = new Button("Cancelar");
@@ -144,21 +165,37 @@ public class TelaClientes implements Tela {
         boxBotoes.setAlignment(Pos.CENTER_RIGHT);
         rootModal.getChildren().add(boxBotoes);
 
-        Scene scene = new Scene(rootModal, 420, 460);
+        Scene scene = new Scene(rootModal, 420, 440);
         modalStage.setScene(scene);
         modalStage.showAndWait();
     }
 
     public static class ModelClienteTabela {
-        private String id, nome, cpf, telefone, cnh, acoes;
+        private String id, nome, cpf, telefone, cnh;
+        private HBox acoes;
+        private Button btnEditar;
+        private Button btnExcluir;
 
-        public ModelClienteTabela(String id, String nome, String cpf, String telefone, String cnh, String acoes) {
+        public ModelClienteTabela(String id, String nome, String cpf, String telefone, String cnh, String acoesTexto) {
             this.id = id;
             this.nome = nome;
             this.cpf = cpf;
             this.telefone = telefone;
             this.cnh = cnh;
-            this.acoes = acoes;
+
+            this.btnEditar = new Button("Editar");
+            this.btnEditar.setStyle("-fx-background-color: #2563eb; -fx-text-fill: white; -fx-font-size: 11px; -fx-cursor: hand;");
+
+            this.btnExcluir = new Button("Excluir");
+            this.btnExcluir.setStyle("-fx-background-color: #dc2626; -fx-text-fill: white; -fx-font-size: 11px; -fx-cursor: hand;");
+
+            this.acoes = new HBox(6, this.btnEditar, this.btnExcluir);
+            this.acoes.setAlignment(Pos.CENTER_LEFT);
+        }
+
+        public void configurarAcoes(ClienteController controller, Runnable aoAtualizar) {
+            this.btnEditar.setOnAction(e -> controller.abrirModalEditarCliente(this, aoAtualizar));
+            this.btnExcluir.setOnAction(e -> controller.confirmarExclusao(this, aoAtualizar));
         }
 
         public String getId() { return id; }
@@ -166,6 +203,6 @@ public class TelaClientes implements Tela {
         public String getCpf() { return cpf; }
         public String getTelefone() { return telefone; }
         public String getCnh() { return cnh; }
-        public String getAcoes() { return acoes; }
+        public HBox getAcoes() { return acoes; }
     }
 }

@@ -1,6 +1,8 @@
 package view;
 
 import controller.MaskUtils;
+import controller.VeiculoController;
+import dao.VeiculoDAO;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
@@ -10,7 +12,6 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.*;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
-import controller.VeiculoDAO;
 
 public class TelaVeiculos implements Tela {
 
@@ -35,23 +36,10 @@ public class TelaVeiculos implements Tela {
         cabecalho.getChildren().addAll(lblTitulo, espacador, btnNovoVeiculo);
         containerPrincipal.getChildren().add(cabecalho);
 
-        HBox barraBusca = new HBox(10);
-        barraBusca.setAlignment(Pos.CENTER_LEFT);
-        barraBusca.setPadding(new Insets(10));
-        barraBusca.setStyle("-fx-background-color: white; -fx-border-color: #e2e8f0; -fx-border-radius: 6px; -fx-background-radius: 6px;");
-
-        TextField txtBusca = new TextField();
-        txtBusca.setPromptText("🔍 Buscar por placa, modelo ou marca...");
-        txtBusca.setPrefWidth(400);
-        txtBusca.setStyle("-fx-pref-height: 32px;");
-
-        barraBusca.getChildren().add(txtBusca);
-        containerPrincipal.getChildren().add(barraBusca);
 
         TableView<ModelVeiculoTabela> tabela = new TableView<>();
         btnNovoVeiculo.setOnAction(e -> abrirModalNovoVeiculo(tabela));
         tabela.setStyle("-fx-background-color: white; -fx-border-color: #e2e8f0;");
-        tabela.setPlaceholder(new Label("Nenhum veículo cadastrado."));
         VBox.setVgrow(tabela, Priority.ALWAYS);
 
         Label lblVazio = new Label("Nenhum veículo cadastrado no momento.");
@@ -61,10 +49,6 @@ public class TelaVeiculos implements Tela {
         TableColumn<ModelVeiculoTabela, String> colId = new TableColumn<>("ID");
         colId.setCellValueFactory(new PropertyValueFactory<>("id"));
         colId.setPrefWidth(50);
-
-        TableColumn<ModelVeiculoTabela, String> colFoto = new TableColumn<>("Foto");
-        colFoto.setCellValueFactory(new PropertyValueFactory<>("foto"));
-        colFoto.setPrefWidth(80);
 
         TableColumn<ModelVeiculoTabela, String> colMarca = new TableColumn<>("Marca");
         colMarca.setCellValueFactory(new PropertyValueFactory<>("marca"));
@@ -90,12 +74,12 @@ public class TelaVeiculos implements Tela {
         colDisponibilidade.setCellValueFactory(new PropertyValueFactory<>("disponibilidade"));
         colDisponibilidade.setPrefWidth(110);
 
-        TableColumn<ModelVeiculoTabela, String> colAcoes = new TableColumn<>("Ações");
+        TableColumn<ModelVeiculoTabela, HBox> colAcoes = new TableColumn<>("Ações");
         colAcoes.setCellValueFactory(new PropertyValueFactory<>("acoes"));
-        colAcoes.setPrefWidth(80);
+        colAcoes.setPrefWidth(170);
 
-        tabela.getColumns().addAll(colId, colFoto, colMarca, colModelo, colAno, colPlaca, colDiaria, colDisponibilidade, colAcoes);
-        tabela.getItems().setAll(new VeiculoDAO().listar());
+        tabela.getColumns().addAll(colId, colMarca, colModelo, colAno, colPlaca, colDiaria, colDisponibilidade, colAcoes);
+        carregarTabela(tabela);
 
         VBox painelTabela = new VBox(tabela);
         painelTabela.setStyle("-fx-background-color: white; -fx-border-color: #e2e8f0; -fx-border-radius: 6px; -fx-background-radius: 6px;");
@@ -104,10 +88,18 @@ public class TelaVeiculos implements Tela {
         return containerPrincipal;
     }
 
+    private void carregarTabela(TableView<ModelVeiculoTabela> tabela) {
+        VeiculoDAO dao = new VeiculoDAO();
+        VeiculoController controller = new VeiculoController();
+        var lista = dao.listar();
+        lista.forEach(item -> item.configurarAcoes(controller, () -> carregarTabela(tabela)));
+        tabela.getItems().setAll(lista);
+    }
+
     private void abrirModalNovoVeiculo(TableView<ModelVeiculoTabela> tabela) {
         Stage modalStage = new Stage();
         modalStage.initModality(Modality.APPLICATION_MODAL);
-        modalStage.setTitle(" Novo Veículo");
+        modalStage.setTitle("Novo Veículo");
         modalStage.setResizable(false);
 
         VBox rootModal = new VBox(15);
@@ -115,7 +107,7 @@ public class TelaVeiculos implements Tela {
         rootModal.setStyle("-fx-background-color: white;");
         rootModal.setAlignment(Pos.TOP_LEFT);
 
-        Label lblModalTitulo = new Label(" Adicionar Novo Veículo");
+        Label lblModalTitulo = new Label("Adicionar Novo Veículo");
         lblModalTitulo.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #1e293b;");
 
         TextField txtMarca = new TextField();
@@ -177,11 +169,8 @@ public class TelaVeiculos implements Tela {
                     alerta.setHeaderText(null);
                     alerta.showAndWait();
 
-                    // Atualiza a tabela de veículos, s/ precisar fechar e abrir a tela de novo
-                    tabela.getItems().setAll(new VeiculoDAO().listar());
-
+                    carregarTabela(tabela);
                     modalStage.close();
-
                 } else {
                     Alert alerta = new Alert(
                             Alert.AlertType.ERROR,
@@ -215,10 +204,35 @@ public class TelaVeiculos implements Tela {
     }
 
     public static class ModelVeiculoTabela {
-        private String id, foto, marca, modelo, ano, placa, valorDiaria, disponibilidade, acoes;
+        private String id, foto, marca, modelo, ano, placa, valorDiaria, disponibilidade;
+        private HBox acoes;
 
-        public ModelVeiculoTabela(String id, String foto, String marca, String modelo, String ano, String placa, String valorDiaria, String disponibilidade, String acoes) {
-            this.id = id; this.foto = foto; this.marca = marca; this.modelo = modelo; this.ano = ano; this.placa = placa; this.valorDiaria = valorDiaria; this.disponibilidade = disponibilidade; this.acoes = acoes;
+        public ModelVeiculoTabela(String id, String foto, String marca, String modelo, String ano, String placa, String valorDiaria, String disponibilidade, String acoesTexto) {
+            this.id = id;
+            this.foto = foto;
+            this.marca = marca;
+            this.modelo = modelo;
+            this.ano = ano;
+            this.placa = placa;
+            this.valorDiaria = valorDiaria;
+            this.disponibilidade = disponibilidade;
+
+            Button btnStatus = new Button("Status");
+            btnStatus.setStyle("-fx-background-color: #2563eb; -fx-text-fill: white; -fx-font-size: 11px; -fx-cursor: hand;");
+
+            Button btnExcluir = new Button("Excluir");
+            btnExcluir.setStyle("-fx-background-color: #dc2626; -fx-text-fill: white; -fx-font-size: 11px; -fx-cursor: hand;");
+
+            this.acoes = new HBox(6, btnStatus, btnExcluir);
+            this.acoes.setAlignment(Pos.CENTER_LEFT);
+        }
+
+        public void configurarAcoes(VeiculoController controller, Runnable aoAtualizar) {
+            Button btnStatus = (Button) this.acoes.getChildren().get(0);
+            Button btnExcluir = (Button) this.acoes.getChildren().get(1);
+
+            btnStatus.setOnAction(e -> controller.abrirModalAlterarStatus(this, aoAtualizar));
+            btnExcluir.setOnAction(e -> controller.confirmarExclusao(this, aoAtualizar));
         }
 
         public String getId() { return id; }
@@ -229,6 +243,6 @@ public class TelaVeiculos implements Tela {
         public String getPlaca() { return placa; }
         public String getValorDiaria() { return valorDiaria; }
         public String getDisponibilidade() { return disponibilidade; }
-        public String getAcoes() { return acoes; }
+        public HBox getAcoes() { return acoes; }
     }
 }

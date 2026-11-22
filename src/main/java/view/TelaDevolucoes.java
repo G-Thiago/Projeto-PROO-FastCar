@@ -1,5 +1,6 @@
 package view;
 
+import dao.LocacaoDAO;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
@@ -9,6 +10,8 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.*;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+
+import java.time.LocalDate;
 
 public class TelaDevolucoes implements Tela {
 
@@ -23,23 +26,16 @@ public class TelaDevolucoes implements Tela {
         lblTitulo.setStyle("-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #1e293b;");
         containerPrincipal.getChildren().add(lblTitulo);
 
-        //  Seção
+        // Seção
         VBox painelSecao = new VBox(15);
         painelSecao.setPadding(new Insets(15));
         painelSecao.setStyle("-fx-background-color: white; -fx-border-color: #e2e8f0; -fx-border-radius: 6px; -fx-background-radius: 6px;");
         VBox.setVgrow(painelSecao, Priority.ALWAYS);
 
-
         Label lblSubtitulo = new Label("Locações em andamento");
         lblSubtitulo.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #1e293b;");
 
-        // Barra de Busca
-        TextField txtBusca = new TextField();
-        txtBusca.setPromptText("🔍 Buscar por nome, placa ou ID da locação...");
-        txtBusca.setMaxWidth(400);
-        txtBusca.setStyle("-fx-pref-height: 32px;");
-
-        painelSecao.getChildren().addAll(lblSubtitulo, txtBusca, new Separator());
+        painelSecao.getChildren().addAll(lblSubtitulo, new Separator());
 
         // Locações Ativas
         TableView<ModelDevolucaoTabela> tabela = new TableView<>();
@@ -75,11 +71,12 @@ public class TelaDevolucoes implements Tela {
         colPrevisao.setCellValueFactory(new PropertyValueFactory<>("previsaoDevolucao"));
         colPrevisao.setPrefWidth(140);
 
-        TableColumn<ModelDevolucaoTabela, String> colAcoes = new TableColumn<>("Ações");
+        TableColumn<ModelDevolucaoTabela, Button> colAcoes = new TableColumn<>("Ações");
         colAcoes.setCellValueFactory(new PropertyValueFactory<>("acoes"));
         colAcoes.setPrefWidth(140);
 
         tabela.getColumns().addAll(colIdLocacao, colCliente, colVeiculo, colPlaca, colRetirada, colPrevisao, colAcoes);
+        carregarTabela(tabela);
 
         painelSecao.getChildren().add(tabela);
         containerPrincipal.getChildren().add(painelSecao);
@@ -87,9 +84,14 @@ public class TelaDevolucoes implements Tela {
         return containerPrincipal;
     }
 
-   // Modal
+    private void carregarTabela(TableView<ModelDevolucaoTabela> tabela) {
+        LocacaoDAO dao = new LocacaoDAO();
+        var lista = dao.listarEmAndamento();
+        lista.forEach(item -> item.configurarAcao(() -> carregarTabela(tabela)));
+        tabela.getItems().setAll(lista);
+    }
 
-    public static void abrirModalDevolucao(String idLocacao, String cliente, String veiculo) {
+    public static void abrirModalDevolucao(String idLocacao, String cliente, String veiculo, Runnable aoConcluir) {
         Stage modalStage = new Stage();
         modalStage.initModality(Modality.APPLICATION_MODAL);
         modalStage.setTitle("🔄 Registrar Devolução");
@@ -113,31 +115,43 @@ public class TelaDevolucoes implements Tela {
                 new Label("Veículo: " + veiculo)
         );
 
-        Label lblChecklist = new Label("Inspeção rápida de devolução:");
-        lblChecklist.setStyle("-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #475569;");
-
-        CheckBox chkLimpeza = new CheckBox("Veículo entregue limpo");
-        CheckBox chkAvarias = new CheckBox("Sem novas avarias aparentes");
-        CheckBox chkTanque = new CheckBox("Tanque de combustível verificado");
-
         rootModal.getChildren().addAll(
                 lblModalTitulo,
                 new Separator(),
-                detalhesLocacao,
-                lblChecklist,
-                chkLimpeza,
-                chkAvarias,
-                chkTanque
+                detalhesLocacao
         );
 
         Button btnConfirmar = new Button("Confirmar Devolução");
         btnConfirmar.setStyle("-fx-background-color: #2563eb; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand;");
         btnConfirmar.setOnAction(e -> {
-            // Modal secundário ou alerta de sucesso simulado
-            Alert alerta = new Alert(Alert.AlertType.INFORMATION, "Devolução registrada com sucesso! (Sem DAO)");
-            alerta.setHeaderText(null);
-            alerta.showAndWait();
-            modalStage.close();
+            try {
+                int locacaoId = Integer.parseInt(idLocacao.trim());
+                LocacaoDAO dao = new LocacaoDAO();
+
+                boolean salvou = dao.registrarDevolucao(
+                        locacaoId,
+                        LocalDate.now()
+                );
+
+                if (salvou) {
+                    Alert alerta = new Alert(Alert.AlertType.INFORMATION, "Devolução registrada com sucesso!");
+                    alerta.setHeaderText(null);
+                    alerta.showAndWait();
+
+                    if (aoConcluir != null) {
+                        aoConcluir.run();
+                    }
+                    modalStage.close();
+                } else {
+                    Alert alerta = new Alert(Alert.AlertType.ERROR, "Erro ao registrar devolução. Confira o console.");
+                    alerta.setHeaderText(null);
+                    alerta.showAndWait();
+                }
+            } catch (NumberFormatException ex) {
+                Alert alerta = new Alert(Alert.AlertType.ERROR, "ID da locação inválido.");
+                alerta.setHeaderText(null);
+                alerta.showAndWait();
+            }
         });
 
         Button btnCancelar = new Button("Cancelar");
@@ -148,12 +162,11 @@ public class TelaDevolucoes implements Tela {
         boxBotoes.setAlignment(Pos.CENTER_RIGHT);
         rootModal.getChildren().add(boxBotoes);
 
-        Scene scene = new Scene(rootModal, 400, 420);
+        Scene scene = new Scene(rootModal, 400, 310);
         modalStage.setScene(scene);
         modalStage.showAndWait();
     }
 
-    // Temporário
     public static class ModelDevolucaoTabela {
         private String idLocacao, cliente, veiculo, placa, dataRetirada, previsaoDevolucao;
         private Button acoes;
@@ -166,10 +179,13 @@ public class TelaDevolucoes implements Tela {
             this.dataRetirada = dataRetirada;
             this.previsaoDevolucao = previsaoDevolucao;
 
-            // Botão de ação integrado na linha
             this.acoes = new Button("Devolver");
             this.acoes.setStyle("-fx-background-color: #2563eb; -fx-text-fill: white; -fx-cursor: hand; -fx-font-size: 11px;");
-            this.acoes.setOnAction(e -> abrirModalDevolucao(idLocacao, cliente, veiculo));
+            this.acoes.setOnAction(e -> abrirModalDevolucao(idLocacao, cliente, veiculo, null));
+        }
+
+        public void configurarAcao(Runnable aoAtualizarTabela) {
+            this.acoes.setOnAction(e -> abrirModalDevolucao(idLocacao, cliente, veiculo, aoAtualizarTabela));
         }
 
         public String getIdLocacao() { return idLocacao; }
