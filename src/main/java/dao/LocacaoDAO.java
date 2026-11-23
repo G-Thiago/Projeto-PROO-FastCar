@@ -9,7 +9,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.time.format.DateTimeFormatter;
-import view.TelaDevolucoes.ModelDevolucaoTabela;
+import model.ModelDevolucaoTabela;
 
 public class LocacaoDAO {
 

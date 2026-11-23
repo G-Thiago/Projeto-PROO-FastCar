@@ -9,6 +9,8 @@ module org.example {
     exports view;
     exports controller;
     exports dao;
+    exports model;
 
     opens view to javafx.base;
+    opens model to javafx.base;
 }

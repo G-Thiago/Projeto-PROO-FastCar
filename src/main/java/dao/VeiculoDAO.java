@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-import view.TelaVeiculos.ModelVeiculoTabela;
+import model.ModelVeiculoTabela;
 
 public class VeiculoDAO {
 

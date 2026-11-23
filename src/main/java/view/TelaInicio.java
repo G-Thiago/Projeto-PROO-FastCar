@@ -46,7 +46,7 @@ public class TelaInicio implements Tela{
         VBox boxStatus = new VBox(3);
         Label lblStatusTitulo = new Label("Status:");
         lblStatusTitulo.setStyle("-fx-font-weight: bold; -fx-text-fill: #1e293b; -fx-font-size: 14px;");
-        Label lblStatusValor = new Label("Em desenvolvimento.");
+        Label lblStatusValor = new Label("Finalizado.");
         lblStatusValor.setStyle("-fx-text-fill: #0284c7; -fx-font-size: 13px; -fx-font-weight: bold;");
         boxStatus.getChildren().addAll(lblStatusTitulo, lblStatusValor);
 

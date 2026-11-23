@@ -13,6 +13,7 @@ public class BarraLateral {
 
     public static VBox criar(TelaPrincipal.MenuClickListener listener) {
 
+
         VBox sidebarBox = new VBox(15);
         sidebarBox.setPrefWidth(240);
         sidebarBox.setMaxWidth(240);
@@ -63,6 +64,7 @@ public class BarraLateral {
         return sidebarBox;
     }
 
+    // Botões
     private static Button criarBotaoMenu(String icone, String texto, TelaPrincipal.MenuClickListener listener) {
         Button btn = new Button(icone + "   " + texto);
         btn.setMaxWidth(Double.MAX_VALUE);

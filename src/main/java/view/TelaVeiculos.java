@@ -1,7 +1,6 @@
 package view;
 
 import controller.MaskUtils;
-import controller.VeiculoController;
 import dao.VeiculoDAO;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -12,6 +11,7 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.*;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import model.ModelVeiculoTabela;
 
 public class TelaVeiculos implements Tela {
 
@@ -35,7 +35,6 @@ public class TelaVeiculos implements Tela {
 
         cabecalho.getChildren().addAll(lblTitulo, espacador, btnNovoVeiculo);
         containerPrincipal.getChildren().add(cabecalho);
-
 
         TableView<ModelVeiculoTabela> tabela = new TableView<>();
         btnNovoVeiculo.setOnAction(e -> abrirModalNovoVeiculo(tabela));
@@ -90,9 +89,11 @@ public class TelaVeiculos implements Tela {
 
     private void carregarTabela(TableView<ModelVeiculoTabela> tabela) {
         VeiculoDAO dao = new VeiculoDAO();
-        VeiculoController controller = new VeiculoController();
         var lista = dao.listar();
-        lista.forEach(item -> item.configurarAcoes(controller, () -> carregarTabela(tabela)));
+        lista.forEach(item -> item.configurarAcoes(
+                veiculo -> abrirModalAlterarStatus(veiculo, () -> carregarTabela(tabela)),
+                veiculo -> confirmarExclusao(veiculo, () -> carregarTabela(tabela))
+        ));
         tabela.getItems().setAll(lista);
     }
 
@@ -203,46 +204,105 @@ public class TelaVeiculos implements Tela {
         modalStage.showAndWait();
     }
 
-    public static class ModelVeiculoTabela {
-        private String id, foto, marca, modelo, ano, placa, valorDiaria, disponibilidade;
-        private HBox acoes;
+    private void abrirModalAlterarStatus(ModelVeiculoTabela veiculo, Runnable aoConcluir) {
+        VeiculoDAO dao = new VeiculoDAO();
 
-        public ModelVeiculoTabela(String id, String foto, String marca, String modelo, String ano, String placa, String valorDiaria, String disponibilidade, String acoesTexto) {
-            this.id = id;
-            this.foto = foto;
-            this.marca = marca;
-            this.modelo = modelo;
-            this.ano = ano;
-            this.placa = placa;
-            this.valorDiaria = valorDiaria;
-            this.disponibilidade = disponibilidade;
+        Stage modalStage = new Stage();
+        modalStage.initModality(Modality.APPLICATION_MODAL);
+        modalStage.setTitle("Alterar Status");
+        modalStage.setResizable(false);
 
-            Button btnStatus = new Button("Status");
-            btnStatus.setStyle("-fx-background-color: #2563eb; -fx-text-fill: white; -fx-font-size: 11px; -fx-cursor: hand;");
+        VBox rootModal = new VBox(15);
+        rootModal.setPadding(new Insets(20));
+        rootModal.setStyle("-fx-background-color: white;");
 
-            Button btnExcluir = new Button("Excluir");
-            btnExcluir.setStyle("-fx-background-color: #dc2626; -fx-text-fill: white; -fx-font-size: 11px; -fx-cursor: hand;");
+        Label lblTitulo = new Label(
+                "Alterar disponibilidade — " + veiculo.getMarca() + " " + veiculo.getModelo() + " (" + veiculo.getPlaca() + ")"
+        );
+        lblTitulo.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #1e293b;");
+        lblTitulo.setWrapText(true);
 
-            this.acoes = new HBox(6, btnStatus, btnExcluir);
-            this.acoes.setAlignment(Pos.CENTER_LEFT);
+        ComboBox<String> cbStatus = new ComboBox<>();
+        cbStatus.getItems().addAll("Disponível", "Alugado", "Em manutenção");
+        cbStatus.setValue(veiculo.getDisponibilidade());
+        cbStatus.setMaxWidth(Double.MAX_VALUE);
+
+        Button btnSalvar = new Button("Salvar");
+        btnSalvar.setStyle("-fx-background-color: #2563eb; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand;");
+        btnSalvar.setOnAction(e -> {
+            boolean ok = dao.atualizarDisponibilidade(
+                    Integer.parseInt(veiculo.getId()),
+                    cbStatus.getValue()
+            );
+            if (ok) {
+                Alert alerta = new Alert(Alert.AlertType.INFORMATION, "Status atualizado com sucesso!");
+                alerta.setHeaderText(null);
+                alerta.showAndWait();
+
+                if (aoConcluir != null) {
+                    aoConcluir.run();
+                }
+                modalStage.close();
+            } else {
+                Alert alerta = new Alert(Alert.AlertType.ERROR, "Erro ao atualizar status. Confira o console.");
+                alerta.setHeaderText(null);
+                alerta.showAndWait();
+            }
+        });
+
+        Button btnCancelar = new Button("Cancelar");
+        btnCancelar.setStyle("-fx-background-color: #e2e8f0; -fx-text-fill: #1e293b; -fx-cursor: hand;");
+        btnCancelar.setOnAction(e -> modalStage.close());
+
+        HBox botoes = new HBox(10, btnSalvar, btnCancelar);
+        botoes.setAlignment(Pos.CENTER_RIGHT);
+
+        rootModal.getChildren().addAll(lblTitulo, cbStatus, botoes);
+        modalStage.setScene(new Scene(rootModal, 360, 190));
+        modalStage.showAndWait();
+    }
+
+    private void confirmarExclusao(ModelVeiculoTabela veiculo, Runnable aoConcluir) {
+        VeiculoDAO dao = new VeiculoDAO();
+
+        if ("Alugado".equalsIgnoreCase(veiculo.getDisponibilidade())) {
+            Alert aviso = new Alert(
+                    Alert.AlertType.WARNING,
+                    "Não é possível excluir um veículo que está alugado. Conclua ou cancele a locação ativa primeiro."
+            );
+            aviso.setHeaderText(null);
+            aviso.showAndWait();
+            return;
         }
 
-        public void configurarAcoes(VeiculoController controller, Runnable aoAtualizar) {
-            Button btnStatus = (Button) this.acoes.getChildren().get(0);
-            Button btnExcluir = (Button) this.acoes.getChildren().get(1);
+        Alert confirmacao = new Alert(
+                Alert.AlertType.CONFIRMATION,
+                "Deseja realmente excluir o veículo " + veiculo.getMarca() + " " + veiculo.getModelo() + " (" + veiculo.getPlaca() + ")?",
+                ButtonType.YES,
+                ButtonType.NO
+        );
+        confirmacao.setHeaderText(null);
 
-            btnStatus.setOnAction(e -> controller.abrirModalAlterarStatus(this, aoAtualizar));
-            btnExcluir.setOnAction(e -> controller.confirmarExclusao(this, aoAtualizar));
-        }
+        confirmacao.showAndWait().ifPresent(resposta -> {
+            if (resposta == ButtonType.YES) {
+                boolean excluiu = dao.excluir(Integer.parseInt(veiculo.getId()));
+                if (excluiu) {
+                    Alert alerta = new Alert(Alert.AlertType.INFORMATION, "Veículo excluído com sucesso!");
+                    alerta.setHeaderText(null);
+                    alerta.showAndWait();
 
-        public String getId() { return id; }
-        public String getFoto() { return foto; }
-        public String getMarca() { return marca; }
-        public String getModelo() { return modelo; }
-        public String getAno() { return ano; }
-        public String getPlaca() { return placa; }
-        public String getValorDiaria() { return valorDiaria; }
-        public String getDisponibilidade() { return disponibilidade; }
-        public HBox getAcoes() { return acoes; }
+                    if (aoConcluir != null) {
+                        aoConcluir.run();
+                    }
+                } else {
+                    Alert alerta = new Alert(
+                            Alert.AlertType.ERROR,
+                            "Não foi possível excluir o veículo. Verifique se ele possui locações vinculadas."
+                    );
+                    alerta.setHeaderText(null);
+                    alerta.showAndWait();
+                }
+            }
+        });
     }
 }
